@@ -71,7 +71,129 @@ GROUP BY grade_event.date;
 mysql> SELECT * FROM grade_stats;
 ```
 
+## 4.2 使用存储程序
 
+存储程序
+
+* 存储函数
+* 存储过程
+* 触发器
+* 事件
+
+在了解如何编写存储程序之前要会写复合语句
+
+### 4.2.1 复合语句和语句分隔符
+
+存储程序可以包含多条SQL语句，并且可以使用多种类型的构建形式，如局部变量、循环和嵌套块。这些特性都需要使用复合语句支持。
+
+这种语句由一个BEGIN和END块构成，其中可以包含任意数量的语句。
+
+```mysql
+CREATE PROCEDURE greetings ()
+BEGIN
+	# 77 = 16 for username + 60 for hostname + 1 for '@'
+	DECLARE user CHAR(77) CHARACTER SET utf8
+	SET user = (SELECR CURRENT_USER());
+	IF INSTR(user, '@') > 0 THEN
+		SET user = SUBSTRING_INDEX(user, '@', 1);
+	END IF
+	IF user = '' THEN	# 匿名用户
+		SET user = 'earthling';
+	END IF
+	SELECT CONCAT('Greetings, ', user, '!') AS greeting;
+END;
+```
+
+对于复合语句，在块内的语句之间必须使用分号";"进行分隔。但由于";"同时又是客户端程序mysql的默认语句分隔符，因此在尝试使用mysql定义存储程序的时候会有冲突。
+
+这可以使用delimeter命令重新定义mysql的默认语句分隔符，从而保证它不会出现在这个存储程序的定义里。在结束后再把结束符定义成分号。
+
+```mysql
+mysql> delimeter $
+mysql> CREATE PROCEDURE show_times()
+	-> BEGIN
+	->   SELECT CURRENT_TIMESTAMP AS 'Local Time';
+	->	 SELECT UTC_TIMESTAMP AS 'UTC TIME';
+	-> END $
+	-> delimeter ;
+	-> CALL show_times();
+```
+
+复合语句不一定要用在复杂的存储程序里，不管程序体里有没有语句，都可以使用复合语句
+
+```mysql
+BEGIN
+  DO SLEEP(1);
+END;
+...
+CREATE PROCEDURE do_nothing()
+BEGIN
+END;
+```
+
+### 4.2.2 存储函数和存储过程
+
+存储函数可以用CREATE FUNCTION创建，存储过程可以用CREATE PROCEDURE语句来创建
+
+基本语法
+
+```mysql
+CREATE FUNCTION func_name([param_list])
+  RETURNS type
+  routine_stmt
+
+CREATE PROCEDURE proc_name([param_list])
+  routine_stmt
+```
+
+下面的实例给出了如何使用函数来进行一个子查询，从而确定有多少位总统出生于给定年份
+
+```mysql
+mysql> delimiter $
+mysql> CREATE FUNCTION count_born_in_year(p_year INT)
+	-> RETURNS INT
+	-> READS SQL DATA
+	-> BEGIN
+	->   RETURN (SELECT COUNT(*) FROM president WHERE YEAR(birth) = p_year);
+	-> END $
+mysql> delimiter ;
+```
+
+这个函数有一条用来表明其返回值数据类型的RETURNS子句，以及一个用来计算那个值的函数体。**函数体至少要包含一条RETURN语句，用来向调用者返回一个值**。
+
+可以像使用内建函数调用，直接输入参数调用
+
+```mysql
+mysql> SELECT count_born_in_year(1908);
+```
+
+存储过程与存储函数很相似，区别在于**存储过程没有返回值**
+
+```mysql
+mysql> delimiter $
+mysql> CREATE PROCEDURE show_born_in_year(p_year INT)
+	-> BEGIN
+	->   SELECT first_name, last_name, birth, death
+	->	 FROM president
+	->	 WHERE YEAR(birth) = p_year;
+mysql> delimiter ;
+```
+
+存储过程不能用在表达式里，只能通过CALL语句来调用
+
+```mysql
+mysql> CALL show_born_in_year(1908);
+```
+
+#### 4.2.2.1 存储函数和存储过程的权限
+
+存储函数和存储过程属于某个数据库，要创建它们必须拥有数据库的CREATE ROUTINE权限。创建存储例程时，没有EXECUTE和ALTER ROUTINE权限。mysql服务器会做一些自动权限授予，以便可以执行或删除该例程。如果不想有这种自动化权限授予/撤销，那就可以将系统变量automatic_sp_privileges设为0。
+
+
+
+
+
+ 
 
 
 
