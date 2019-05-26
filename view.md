@@ -43,7 +43,7 @@ mysql> SELECT * FROM vpres WHERE last_name = 'Adams';
 
 ```mysql
 mysql> CREATE VIEW vpres2 (ln, fn) AS
-    -> SELECT last_name, first_name, FROM president;
+    -> SELECT last_name, first_name FROM president;
 ```
 
 使用别名后引用视图，就必须使用括号里给出的列名。
@@ -226,7 +226,7 @@ mysql> SELECT @male_count, @female_count;
 
 ### 4.2.3 触发器
 
-触发器是与特定表相关联的存储过程，其定义会在执行表的INSERT、DELETE或UPDATE 语句时，被自动激活。触发器可被设置成语句处理各行之前或之后激活。触发器的定义包含有 一条会在触发器被激活时执行的语句。
+触发器是与特定表相关联的存储过程，其定义会在执行表的INSERT、DELETE或UPDATE 语句时，被自动激活。触发器可被设置成语句处理各行之前或之后激活。触发器的定义包含有一条会在触发器被激活时执行的语句。
 
 触发器具有以下几个好处。
 
@@ -261,7 +261,7 @@ trigger_stmt是触发器的语句体，即在触发器被激活时需要执行�
 
 ```mysql
 mysql> CREATE TABLE t(percent INT, dt DATETIME);
-mysql> delimiter$
+mysql> delimiter $
 mysql> CREATE TRIGGER bi_t BEFORE INSERT ON t
 	->	 FOR EACH ROW BEGIN
 	->	   IF NEW.percent< 0 THEN
@@ -269,14 +269,14 @@ mysql> CREATE TRIGGER bi_t BEFORE INSERT ON t
     ->     ELSEIF NEW.percent> 100 THEN
     ->       SET NEW.percent= 100;
     ->	   END IF;
-   	->   NEW.dt = CURRENT_TIMESTAMP; 
-    ->   END$ 
+   	->   NEW.dt = CURRENT_TIMESTAMP(); 
+    ->   END $ 
 mysql> delimiter ;
 ```
 
 这个触发器将完成以下两个动作。
 
-* 如果要插入的百分比值超出了0-100的范围，那么这个触发器将把该值转换成最靠近端 点的那个值。
+* 如果要插入的百分比值超出了0-100的范围，那么这个触发器将把该值转换成最靠近端点的那个值。
 * 这个触发器将自动为那个DATETIME列提供一个CURRENT_TIMESTAMP值。
 
 来看看这个触发器是如何工作的，先往表里插入几行，然后检索表的内容： 
@@ -290,7 +290,7 @@ mysql> SELECT* FROM t;
 
 ### 4.2.4 事件
 
-MySQL有一个事件调度器，它可以定时激活多个数据库操作。事件就是一个与计划相关联 的存储程序。计划会定义事件执行的时间或次数，并且还可以定义事件何时强行退出。事件非常适合于执行那些无人值守的系统管理任务，如汇总报告定期更新、旧数据过期清理或者日志表轮换等。
+MySQL有一个事件调度器，它可以定时激活多个数据库操作。事件就是一个与计划相关联的存储程序。计划会定义事件执行的时间或次数，并且还可以定义事件何时强行退出。事件非常适合于执行那些无人值守的系统管理任务，如汇总报告定期更新、旧数据过期清理或者日志表轮换等。
 
 一个完成行过期处理操作的事件例子。
 
